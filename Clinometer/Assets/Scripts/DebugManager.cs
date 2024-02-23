@@ -24,7 +24,8 @@ public class DebugManager : MonoBehaviour
 
     public void Log(string msg)
     {
+        // Prepends message.
         Debug.Log(msg);
-        text.text += $"[{DateTime.Now}]:{msg}\n";
+        text.text = $"[{DateTime.Now}]:{msg}\n{text.text}";
     }
 }
