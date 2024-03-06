@@ -2,10 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// Contains logic for gyro/accelerometer, button handling, etc.
+// Contains logic for gyro/accelerometer, public methods for button handling, etc.
 public class ClinometerManager : MonoBehaviour
 {
     Gyroscope gyro;
+
+    [SerializeField]
+    GameObject distancePanel;
+    [SerializeField]
+    List<GameObject> crosshairs;
+
     [SerializeField]
     float updateCurrentAngleIntervalSecs;
     float updateCurrentAngleTimer = 0;
@@ -56,5 +62,20 @@ public class ClinometerManager : MonoBehaviour
     public void SetBottomAngle() 
     { 
         ClinometerReadout.Instance.BottomAngle = GetCurrentVerticalAngle();
+    }
+
+    public void OnUpdatedDistances()
+    {
+        ClinometerReadout.Instance.OnUpdatedDistances(); // Ugly, but trying to keep this the controller/place for all public button callbacks.
+    }
+
+    public void ToggleDistancePanel()
+    {
+        bool setPanelActive = !distancePanel.activeSelf;
+        distancePanel.SetActive(setPanelActive);
+        foreach(var obj in crosshairs)
+        {
+            obj.SetActive(!setPanelActive);
+        }
     }
 }
