@@ -16,6 +16,11 @@ public class ClinometerManager : MonoBehaviour
     float updateCurrentAngleIntervalSecs;
     float updateCurrentAngleTimer = 0;
 
+    [SerializeField]
+    public bool gyroCompatibilityMode;
+    float xRotation;
+    float yRotation;
+
     // Start is called before the first frame update
     IEnumerator Start()
     {
@@ -50,9 +55,16 @@ public class ClinometerManager : MonoBehaviour
             updateCurrentAngleTimer = 0;
             ClinometerReadout.Instance.CurrentAngle = gyro.attitude.eulerAngles;
         }
+
+        if(gyroCompatibilityMode)
+        {
+            yRotation += -Input.gyro.rotationRateUnbiased.y;
+            xRotation += -Input.gyro.rotationRateUnbiased.x;
+            ClinometerReadout.Instance.CurrentAngle = new Vector3(xRotation, yRotation, 0);
+        }
     }
 
-    float GetCurrentVerticalAngle() => gyro.attitude.eulerAngles[1];
+    float GetCurrentVerticalAngle() => gyroCompatibilityMode ? yRotation : gyro.attitude.eulerAngles[1];
 
     public void SetTopAngle()
     {
