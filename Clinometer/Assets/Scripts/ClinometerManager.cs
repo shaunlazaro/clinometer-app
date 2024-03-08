@@ -5,7 +5,7 @@ using UnityEngine;
 // Contains logic for gyro/accelerometer, public methods for button handling, etc.
 public class ClinometerManager : MonoBehaviour
 {
-    Gyroscope gyro;
+    UnityEngine.Gyroscope gyro;
 
     [SerializeField]
     GameObject distancePanel;
@@ -18,8 +18,7 @@ public class ClinometerManager : MonoBehaviour
 
     [SerializeField]
     public bool gyroCompatibilityMode;
-    float xRotation;
-    float yRotation;
+    bool hasGravitySensor;
 
     // Start is called before the first frame update
     IEnumerator Start()
@@ -44,27 +43,41 @@ public class ClinometerManager : MonoBehaviour
 #endif
 
         DebugManager.Instance.Log($"Gyro status: (Real: {hasRealGyro}), (Supported: {supportGyro})");
+
+        if (gyroCompatibilityMode)
+        {
+            bool hasGyro = UnityEngine.InputSystem.Gyroscope.current != null;
+            bool hasAccelerometer = UnityEngine.InputSystem.Accelerometer.current != null;
+            bool hasGravity = UnityEngine.InputSystem.GravitySensor.current != null;
+            hasGravitySensor = hasGravity;
+
+            DebugManager.Instance.Log($"Sensor Status (Compatibility Mode): (Gyro: {hasGyro}), (Accel: {hasAccelerometer}), (Gravity: {hasGravity})");
+            if (hasGravity)
+                UnityEngine.InputSystem.InputSystem.EnableDevice(UnityEngine.InputSystem.GravitySensor.current);
+        }
+
+
         yield return null;
     }
 
     private void Update()
     {
         updateCurrentAngleTimer += Time.deltaTime;
+
         if(updateCurrentAngleTimer > updateCurrentAngleIntervalSecs)
         {
             updateCurrentAngleTimer = 0;
             ClinometerReadout.Instance.CurrentAngle = gyro.attitude.eulerAngles;
-        }
 
-        if(gyroCompatibilityMode)
-        {
-            yRotation += -Input.gyro.rotationRateUnbiased.y;
-            xRotation += -Input.gyro.rotationRateUnbiased.x;
-            ClinometerReadout.Instance.CurrentAngle = new Vector3(xRotation, yRotation, 0);
+            if (gyroCompatibilityMode && hasGravitySensor)
+            {
+                ClinometerReadout.Instance.CurrentAngle = UnityEngine.InputSystem.GravitySensor.current?.gravity?.ReadValue() ?? new Vector3();
+            }
         }
     }
 
-    float GetCurrentVerticalAngle() => gyroCompatibilityMode ? yRotation : gyro.attitude.eulerAngles[1];
+    float GetCurrentVerticalAngle() => gyroCompatibilityMode && hasGravitySensor ?
+        (UnityEngine.InputSystem.GravitySensor.current.gravity.ReadValue()[2] + 1) * 90 : gyro.attitude.eulerAngles[1];
 
     public void SetTopAngle()
     {
